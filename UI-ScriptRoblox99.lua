@@ -1,13 +1,12 @@
 -- ================= ตั้งค่าของพี่ =================
 local VERIFY_URL = "https://discord-bot-x7k1.onrender.com/verify"
 local GETSCRIPT_BASE = "https://discord-bot-x7k1.onrender.com/getscript"
-local LOADER_URL = "https://raw.githubusercontent.com/xekarthan2527-boop/XEK/refs/heads/main/UI-ScriptRoblox99.lua"
+local LOADER_URL = "https://raw.githubusercontent.com/xekarthan2527-boop/XEK/refs/heads/main/UI-ScriptRoblox99.lua" -- ลิงค์ไฟล์นี้แหละ เอาไว้รีโหลดตอนวาปแมพ
 local DISCORD_INVITE = "https://discord.gg/Pm5G3G8b7u"
 
 local UI_NAME = "ScriptRoblox99_UI"
 local MAIN_UI_NAME = "ScriptRoblox99_Main"
 local KEY_FILE = "ScriptRoblox99_Key.txt"
-local STATE_FILE = "ScriptRoblox99_State.json"
 
 local HttpService = game:GetService("HttpService")
 local TweenService = game:GetService("TweenService")
@@ -16,66 +15,30 @@ local CoreGui = game:GetService("CoreGui")
 local Hui = gethui and gethui() or CoreGui
 local Player = game.Players.LocalPlayer
 
--- ลบเวอร์ชันเก่าทิ้งก่อน
-pcall(function() if CoreGui:FindFirstChild(UI_NAME) then CoreGui[UI_NAME]:Destroy() end end)
-pcall(function() if Hui:FindFirstChild(UI_NAME) then Hui[UI_NAME]:Destroy() end end)
+pcall(function() CoreGui:FindFirstChild(UI_NAME):Destroy() end)
+pcall(function() Hui:FindFirstChild(UI_NAME):Destroy() end)
 
--- ================= ฟังก์ชันหลัก =================
-local function getHWID() local id = "" pcall(function() id = game:GetService("RbxAnalyticsService"):GetClientId() end) return id end
-
+local function getHWID() local id="" pcall(function() id=game:GetService("RbxAnalyticsService"):GetClientId() end) return id end
 local function checkKey(k, h)
-    local encodedKey = HttpService:UrlEncode(k)
-    local encodedHwid = HttpService:UrlEncode(h)
-    local ok, res = pcall(function() return game:HttpGet(VERIFY_URL.."?key="..encodedKey.."&hwid="..encodedHwid) end)
-    if not ok then return false, {} end
-    local decOk, data = pcall(function() return HttpService:JSONDecode(res) end)
-    return decOk and data and data.valid == true or false, decOk and data or {}
+    local ok,res = pcall(function() return game:HttpGet(VERIFY_URL.."?key="..k.."&hwid="..h) end)
+    if not ok then return false end
+    local s,data = pcall(function() return HttpService:JSONDecode(res) end)
+    return s and data and data.valid, data
 end
-
-local function saveState(remainingSec)
-    if not writefile then return end
-    local state = {
-        key = getgenv().MyKey or "",
-        expireAt = tick() + tonumber(remainingSec or 0),
-        lastCheck = tick()
-    }
-    pcall(function() writefile(STATE_FILE, HttpService:JSONEncode(state)) end)
-end
-
-local function loadSavedState()
-    if not readfile or not isfile or not isfile(STATE_FILE) then return nil end
-    local ok, state = pcall(function() return HttpService:JSONDecode(readfile(STATE_FILE)) end)
-    if not ok or type(state) ~= "table" or not state.key then return nil end
-    -- ลบถ้าหมดอายุแล้ว
-    if state.expireAt and tick() > state.expireAt then
-        pcall(function() if isfile and delfile then delfile(STATE_FILE) delfile(KEY_FILE) end end)
-        return nil
-    end
-    return state
-end
-
 local function stopMain()
-    pcall(function() getgenv().MyKey = nil getgenv().KeyExpire = nil getgenv().XEK_Loaded = nil getgenv().XEK_MainRunning = nil end)
-    pcall(function() if isfile and delfile then delfile(KEY_FILE) delfile(STATE_FILE) end end)
     pcall(function() CoreGui:FindFirstChild(MAIN_UI_NAME):Destroy() end)
     pcall(function() Hui:FindFirstChild(MAIN_UI_NAME):Destroy() end)
+    getgenv().MyKey=nil getgenv().KeyExpire=nil getgenv().XEK_Loaded=nil getgenv().XEK_MainRunning=nil
 end
 
--- รีโหลดอัตโนมัติตอนย้ายเซิร์ฟ
 local qot = queue_on_teleport or queueonteleport or (syn and syn.queue_on_teleport)
-if qot then qot('task.wait(2) loadstring(game:HttpGet("'..LOADER_URL.."))()'") end
+if qot then qot('loadstring(game:HttpGet("'..LOADER_URL..'"))()') end
 
--- โหลดข้อมูลเดิม
 local hwid = getHWID()
 local savedKey = getgenv().MyKey
-local savedState = loadSavedState()
+if not savedKey and isfile and isfile(KEY_FILE) then pcall(function() savedKey = readfile(KEY_FILE) end) end
 
-if not savedKey then
-    if savedState and savedState.key then savedKey = savedState.key
-    elseif isfile and isfile(KEY_FILE) then pcall(function() savedKey = readfile(KEY_FILE) end) end
-end
-
--- ================= สร้าง UI รูปแบบเดิมทุกประการ =================
+-- ================= UI สวยแบบใหม่ =================
 local gui = Instance.new("ScreenGui")
 gui.Name = UI_NAME
 gui.ResetOnSpawn = false
@@ -120,7 +83,7 @@ minimize.BackgroundColor3 = Color3.fromRGB(45,45,55)
 minimize.TextColor3 = Color3.new(1,1,1)
 Instance.new("UICorner",minimize)
 
--- ส่วนเนื้อหา
+-- BODY
 local body = Instance.new("Frame",frame)
 body.Position = UDim2.new(0,0,0,45)
 body.Size = UDim2.new(1,0,1,-45)
@@ -153,6 +116,7 @@ keyBox.BackgroundColor3 = Color3.fromRGB(30,30,35)
 keyBox.PlaceholderText = "วางคีย์ ScriptRoblox99_... ที่นี่"
 keyBox.Text = ""
 keyBox.TextColor3 = Color3.fromRGB(255,255,255)
+keyBox.TextSize = 13
 keyBox.Font = Enum.Font.Gotham
 Instance.new("UICorner",keyBox).CornerRadius = UDim.new(0,8)
 
@@ -176,175 +140,131 @@ discordBtn.TextColor3 = Color3.fromRGB(200,200,200)
 discordBtn.BackgroundColor3 = Color3.fromRGB(40,40,50)
 Instance.new("UICorner",discordBtn).CornerRadius = UDim.new(0,8)
 
--- นาฬิกานับเวลา
+-- Timer Circle
 local Circle = Instance.new("Frame",gui)
 Circle.Name = "TimerCircle"
-Circle.Size = UDim2.new(0,65,0,65)
-Circle.Position = UDim2.new(1,-80,0,20)
-Circle.BackgroundColor3 = Color3.fromRGB(18,18,22)
+Circle.Size = UDim2.new(0, 65, 0, 65)
+Circle.Position = UDim2.new(1, -80, 0, 20)
+Circle.BackgroundColor3 = Color3.fromRGB(18, 18, 22)
 Circle.Visible = false
-Instance.new("UICorner",Circle).CornerRadius = UDim.new(1,0)
-local CircleStroke = Instance.new("UIStroke",Circle)
-CircleStroke.Color = Color3.fromRGB(0,255,170)
+Instance.new("UICorner", Circle).CornerRadius = UDim.new(1, 0)
+local CircleStroke = Instance.new("UIStroke", Circle)
+CircleStroke.Color = Color3.fromRGB(0, 255, 170)
 CircleStroke.Thickness = 3
-local CircleText = Instance.new("TextLabel",Circle)
-CircleText.Size = UDim2.new(1,0,1,0)
+local CircleText = Instance.new("TextLabel", Circle)
+CircleText.Size = UDim2.new(1, 0, 1, 0)
 CircleText.BackgroundTransparency = 1
-CircleText.Text = "00:00"
+CircleText.Text = "60:00"
 CircleText.TextColor3 = Color3.new(1,1,1)
 CircleText.TextSize = 14
 CircleText.Font = Enum.Font.GothamBold
 
--- ================= ระบบทำงาน =================
+-- Functions
 local function startCountdown(sec)
     Circle.Visible = true
     frame.Visible = false
-    saveState(sec)
-
     task.spawn(function()
-        local total = tonumber(sec) or 0
-        while total > 0 and getgenv().MyKey do
-            -- เช็คกับเซิร์ฟเวอร์ทุก 15 วินาที
-            if total % 15 == 0 then
-                local ok, data = checkKey(getgenv().MyKey, hwid)
-                if ok and data.remaining and data.remaining > 0 then
-                    total = data.remaining
-                    saveState(total)
-                else
-                    break
-                end
+        local total = sec
+        while total > 0 do
+            if total % 15 == 0 and getgenv().MyKey then
+                local valid, data = checkKey(getgenv().MyKey, hwid)
+                if valid and data.remaining then total = data.remaining else total=0 break end
             end
-
-            local m = math.floor(total / 60)
-            local s = total % 60
+            local m = math.floor(total/60) local s = total % 60
             CircleText.Text = string.format("%02d:%02d", m, s)
-
-            if total < 300 then
-                CircleStroke.Color = Color3.fromRGB(255,80,80)
-                CircleText.TextColor3 = Color3.fromRGB(255,80,80)
-            else
-                CircleStroke.Color = Color3.fromRGB(0,255,170)
-                CircleText.TextColor3 = Color3.fromRGB(0,255,170)
-            end
-
-            task.wait(1)
-            total -= 1
+            if total < 300 then CircleStroke.Color = Color3.fromRGB(255,80,80) CircleText.TextColor3 = Color3.fromRGB(255,80,80) end
+            task.wait(1) total -= 1
         end
-
-        -- หมดเวลา
-        stopMain()
-        Circle.Visible = false
-        frame.Visible = true
-        checkBtn.Text = "✨ คีย์หมดอายุ กรุณาใส่ใหม่"
-        keyBox.Text = ""
+        Circle.Visible = false stopMain() frame.Visible = true checkBtn.Text = "คีย์หมดอายุแล้ว ใส่ใหม่ ✨" keyBox.Text = ""
+        pcall(function() if isfile and delfile and isfile(KEY_FILE) then delfile(KEY_FILE) end end)
     end)
 end
 
 local function loadGame(key)
     if getgenv().XEK_MainRunning then return end
     getgenv().XEK_MainRunning = true
-
-    -- รอโหลดฉากเสร็จก่อน
-    task.delay(2, function()
-        local url = GETSCRIPT_BASE.."?key="..HttpService:UrlEncode(key).."&placeId="..game.PlaceId.."&hwid="..HttpService:UrlEncode(hwid)
-        local ok, code = pcall(function() return game:HttpGet(url) end)
-
-        if ok and code and not code:find("Invalid") and not code:find("not found") and not code:find("HWID mismatch") then
-            pcall(function() loadstring(code)() end)
-            -- ปิดหน้านี้เมื่อสำเร็จ
-            task.delay(4, function() pcall(function() gui:Destroy() end) end)
-        else
-            infoText.Text = "❌ โหลดไม่ได้\nเกมยังไม่รองรับ หรือเซิร์ฟมีปัญหา"
-            getgenv().XEK_MainRunning = nil
-            Circle.Visible = false
-            frame.Visible = true
-        end
-    end)
-end
-
--- เช็คคีย์เดิมโดยอัตโนมัติ
-if savedKey and savedKey ~= "" then
-    keyBox.Text = savedKey
-    infoText.Text = "🔍 ตรวจสอบคีย์เดิมกับเซิร์ฟเวอร์..."
-    checkBtn.Text = "กำลังตรวจสอบ..."
-    frame.Active = false
-
-    local ok, data = checkKey(savedKey, hwid)
-    if ok and data.remaining and data.remaining > 0 then
-        getgenv().MyKey = savedKey
-        getgenv().XEK_Loaded = true
-        startCountdown(data.remaining)
-        loadGame(savedKey)
+    -- 📌 ส่ง gameId (UniverseId) ไปให้เซิร์ฟเวอร์แทน placeId เพื่อให้ครอบคลุมทุกดันเจี้ยนในเกมนั้นๆ
+    local url = GETSCRIPT_BASE.."?key="..key.."&gameId="..game.GameId.."&hwid="..hwid
+    local ok, code = pcall(function() return game:HttpGet(url) end)
+    if ok and code and not code:find("Invalid") and not code:find("not found") then
+        loadstring(code)()
     else
-        stopMain()
-        infoText.Text = "⚠️ คีย์หมดอายุหรือไม่ถูกต้อง\nกรุณาใส่คีย์ใหม่"
-        checkBtn.Text = "✨ เช็คคีย์และเริ่มใช้งาน"
-        frame.Active = true
+        infoText.Text = "โหลดสคริปเกมนี้ไม่สำเร็จ\nเกมนี้ยังไม่รองรับ หรือ GameId ไม่ถูกต้อง"
+        getgenv().XEK_MainRunning = nil
     end
 end
 
--- กดยืนยันคีย์
-checkBtn.MouseButton1Click:Connect(function()
-    local inputKey = keyBox.Text:gsub("%s+", "")
-    if inputKey == "" then return end
-
-    infoText.Text = "🔍 ส่งตรวจสอบไปที่เซิร์ฟเวอร์..."
-    checkBtn.Text = "รอสักครู่..."
-    frame.Active = false
-
-    local ok, data = checkKey(inputKey, hwid)
-    if ok and data.remaining and data.remaining > 0 then
-        getgenv().MyKey = inputKey
+-- Auto Check Saved Key
+if savedKey and savedKey ~= "" then
+    infoText.Text = "เจอคีย์เก่า กำลังเช็ค..."
+    checkBtn.Text = "กำลังเช็คคีย์เก่า..."
+    local valid, data = checkKey(savedKey, hwid)
+    if valid then
+        getgenv().MyKey = savedKey
+        getgenv().KeyExpire = tick() + (data.remaining or 3600)
         getgenv().XEK_Loaded = true
-        if writefile then
-            pcall(function() writefile(KEY_FILE, inputKey) end)
-            saveState(data.remaining)
-        end
-        startCountdown(data.remaining)
-        loadGame(inputKey)
+        infoText.Text = "คีย์ถูกต้อง ✅\nกำลังโหลดสคริป..."
+        startCountdown(data.remaining or 3600)
+        loadGame(savedKey)
+        return
     else
-        infoText.Text = "❌ คีย์ไม่ถูกต้อง/หมดอายุ\nรับคีย์ใหม่ที่ดิสคอร์ด"
+        pcall(function() if isfile and delfile and isfile(KEY_FILE) then delfile(KEY_FILE) end end)
+        infoText.Text = "คีย์เก่าหมดอายุแล้ว ใส่ใหม่นะครับ"
+    end
+end
+
+checkBtn.MouseButton1Click:Connect(function()
+    local key = keyBox.Text:gsub("%s+","")
+    if key == "" then infoText.Text = "กรุณาใส่คีย์ก่อนครับ" return end
+    checkBtn.Text = "กำลังเช็ค..."
+    local valid, data = checkKey(key, hwid)
+    if valid then
+        checkBtn.Text = "ผ่านแล้ว ✅"
+        getgenv().MyKey = key
+        getgenv().KeyExpire = tick() + (data.remaining or 3600)
+        getgenv().XEK_Loaded = true
+        if writefile then pcall(function() writefile(KEY_FILE, key) end) end
+        infoText.Text = "คีย์ถูกต้อง ✅\nกำลังโหลดสคริป..."
+        startCountdown(data.remaining or 3600)
+        loadGame(key)
+    else
+        checkBtn.Text = "คีย์ไม่ถูกต้อง ❌"
+        infoText.Text = "คีย์ไม่ถูกต้อง หรือหมดอายุแล้ว\nกดปุ่มล่างเพื่อขอฟรี"
+        task.wait(1.5)
         checkBtn.Text = "✨ เช็คคีย์และเริ่มใช้งาน"
-        frame.Active = true
     end
 end)
 
 discordBtn.MouseButton1Click:Connect(function()
     setclipboard(DISCORD_INVITE)
-    discordBtn.Text = "✅ คัดลอกลิงค์แล้ว!"
-    task.delay(2, function() discordBtn.Text = "🔑 ขอรหัสฟรี / ก๊อปปี้ดิสคอร์ด" end)
+    discordBtn.Text = "✅ ก๊อปปี้ลิงค์ดิสแล้ว!"
+    task.wait(2)
+    discordBtn.Text = "🔑 ขอรหัสฟรี / ก๊อปปี้ดิสคอร์ด"
 end)
 
--- ลากย่อขยาย
+-- Drag & Minimize
 local open = true
 minimize.MouseButton1Click:Connect(function()
     open = not open
     body.Visible = open
-    if open then 
-        frame:TweenSize(UDim2.new(0,340,0,250), Enum.EasingDirection.Out, Enum.EasingStyle.Back, 0.35, true) 
-        minimize.Text = "-"
-    else 
-        frame:TweenSize(UDim2.new(0,340,0,38), Enum.EasingDirection.Out, Enum.EasingStyle.Back, 0.35, true) 
-        minimize.Text = "+" 
-    end
+    if open then frame:TweenSize(UDim2.new(0,340,0,250),"Out","Quad",0.25,true) minimize.Text="-"
+    else frame:TweenSize(UDim2.new(0,340,0,38),"Out","Quad",0.25,true) minimize.Text="+" end
 end)
-
 local dragging, dragStart, startPos
 top.InputBegan:Connect(function(input)
-    if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
-        dragging = true
-        dragStart = input.Position
-        startPos = frame.Position
-        input.Changed:Connect(function() if input.UserInputState == Enum.UserInputState.End then dragging = false end end)
+    if input.UserInputType==Enum.UserInputType.MouseButton1 or input.UserInputType==Enum.UserInputType.Touch then
+        dragging=true dragStart=input.Position startPos=frame.Position
     end
 end)
 UIS.InputChanged:Connect(function(input)
-    if dragging and (input.UserInputType == Enum.UserInputType.MouseMovement or input.UserInputType == Enum.UserInputType.Touch) then
+    if dragging and (input.UserInputType==Enum.UserInputType.MouseMovement or input.UserInputType==Enum.UserInputType.Touch) then
         local delta = input.Position - dragStart
-        frame.Position = UDim2.new(startPos.X.Scale, startPos.X.Offset + delta.X, startPos.Y.Scale, startPos.Y.Offset + delta.Y)
+        frame.Position = UDim2.new(startPos.X.Scale,startPos.X.Offset+delta.X,startPos.Y.Scale,startPos.Y.Offset+delta.Y)
     end
 end)
+UIS.InputEnded:Connect(function(input)
+    if input.UserInputType==Enum.UserInputType.MouseButton1 or input.UserInputType==Enum.UserInputType.Touch then dragging=false end
+end)
 
--- แสดงผลด้วยแอนิเมชั่น
 frame.Size = UDim2.new(0,0,0,0)
-TweenService:Create(frame, TweenInfo.new(0.35, Enum.EasingStyle.Back), {Size = UDim2.new(0,340,0,250)}):Play()
+TweenService:Create(frame,TweenInfo.new(0.35,Enum.EasingStyle.Back),{Size=UDim2.new(0,340,0,250)}):Play()

@@ -63,7 +63,7 @@ end
 
 -- รีโหลดอัตโนมัติตอนย้ายเซิร์ฟ
 local qot = queue_on_teleport or queueonteleport or (syn and syn.queue_on_teleport)
-if qot then qot('task.wait(2) loadstring(game:HttpGet("'..LOADER_URL..'"))()') end
+if qot then qot('task.wait(2) loadstring(game:HttpGet("'..LOADER_URL.."))()'") end
 
 -- โหลดข้อมูลเดิม
 local hwid = getHWID()
@@ -320,8 +320,13 @@ local open = true
 minimize.MouseButton1Click:Connect(function()
     open = not open
     body.Visible = open
-    if open then frame:TweenSize(UDim2.new(0,340,0,250)), Enum.EasingDirection.Out, Enum.EasingStyle.Back, 0.35) minimize.Text = "-"
-    else frame:TweenSize(UDim2.new(0,340,0,38)), Enum.EasingDirection.Out, Enum.EasingStyle.Back, 0.35) minimize.Text = "+" end
+    if open then 
+        frame:TweenSize(UDim2.new(0,340,0,250), Enum.EasingDirection.Out, Enum.EasingStyle.Back, 0.35, true) 
+        minimize.Text = "-"
+    else 
+        frame:TweenSize(UDim2.new(0,340,0,38), Enum.EasingDirection.Out, Enum.EasingStyle.Back, 0.35, true) 
+        minimize.Text = "+" 
+    end
 end)
 
 local dragging, dragStart, startPos

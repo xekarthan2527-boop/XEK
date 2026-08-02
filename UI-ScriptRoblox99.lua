@@ -141,23 +141,56 @@ discordBtn.BackgroundColor3 = Color3.fromRGB(40,40,50)
 Instance.new("UICorner",discordBtn).CornerRadius = UDim.new(0,8)
 
 -- Timer Circle
-local Circle = Instance.new("Frame",gui)
-Circle.Name = "TimerCircle"
-Circle.Size = UDim2.new(0, 65, 0, 65)
-Circle.Position = UDim2.new(1, -80, 0, 20)
-Circle.BackgroundColor3 = Color3.fromRGB(18, 18, 22)
-Circle.Visible = false
-Instance.new("UICorner", Circle).CornerRadius = UDim.new(1, 0)
+-- ================= เปลี่ยนจากวงกลม เป็นสี่เหลี่ยมผืนผ้า และลากขยับได้ =================
+local Circle = Instance.new("Frame", gui)
+Circle.Name = "TimerBox"
+-- ปรับขนาดเป็นสี่เหลี่ยมผืนผ้า (กว้าง 130, สูง 40)
+Circle.Size = UDim2.new(0, 130, 0, 40)
+-- กำหนดตำแหน่งเริ่มต้น (ปรับเลื่อนขึ้นขอบจอตามต้องการได้)
+Circle.Position = UDim2.new(1, -140, 0, 15) 
+Circle.BackgroundColor3 = Color3.fromRGB(15, 15, 20)
+Circle.Visible = false -- ซ่อนไว้ก่อนจนกว่าจะใส่คีย์ผ่าน
+Instance.new("UICorner", Circle).CornerRadius = UDim.new(0, 8) -- ทำมุมโค้งมนสวยๆ
+
 local CircleStroke = Instance.new("UIStroke", Circle)
 CircleStroke.Color = Color3.fromRGB(0, 255, 170)
-CircleStroke.Thickness = 3
+CircleStroke.Thickness = 1.5
+
 local CircleText = Instance.new("TextLabel", Circle)
 CircleText.Size = UDim2.new(1, 0, 1, 0)
 CircleText.BackgroundTransparency = 1
-CircleText.Text = "60:00"
+CircleText.Text = "⏳ 60:00"
 CircleText.TextColor3 = Color3.new(1,1,1)
-CircleText.TextSize = 14
+CircleText.TextSize = 13
 CircleText.Font = Enum.Font.GothamBold
+
+-- 🖱️ เพิ่มระบบทำให้กล่องสี่เหลี่ยมนี้ "ลากเลื่อนไปซ้าย ขวา บน ล่าง ได้อิสระ"
+local timerDragging, timerDragStart, timerStartPos
+Circle.InputBegan:Connect(function(input)
+    if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
+        timerDragging = true 
+        timerDragStart = input.Position 
+        timerStartPos = Circle.Position
+    end
+end)
+
+UIS.InputChanged:Connect(function(input)
+    if timerDragging and (input.UserInputType == Enum.UserInputType.MouseMovement or input.UserInputType == Enum.UserInputType.Touch) then
+        local delta = input.Position - timerDragStart
+        Circle.Position = UDim2.new(
+            timerStartPos.X.Scale, 
+            timerStartPos.X.Offset + delta.X, 
+            timerStartPos.Y.Scale, 
+            timerStartPos.Y.Offset + delta.Y
+        )
+    end
+end)
+
+UIS.InputEnded:Connect(function(input)
+    if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then 
+        timerDragging = false 
+    end
+end)
 
 -- Functions
 local function startCountdown(sec)

@@ -38,15 +38,22 @@ local hwid = getHWID()
 local savedKey = getgenv().MyKey
 if not savedKey and isfile and isfile(KEY_FILE) then pcall(function() savedKey = readfile(KEY_FILE) end) end
 
--- ================= UI สวยแบบใหม่ =================
+-- ================= UI เต็มจอทับทุกปุ่ม (Fullscreen Overlay) =================
 local gui = Instance.new("ScreenGui")
 gui.Name = UI_NAME
 gui.ResetOnSpawn = false
 gui.Parent = Hui
-gui.ZIndexBehavior = Enum.ZIndexBehavior.Sibling
+gui.IgnoreGuiInset = true -- ดึงให้เต็มจอทะลุขอบบน
+gui.ZIndexBehavior = Enum.ZIndexBehavior.Global
 
-local frame = Instance.new("Frame")
-frame.Parent = gui
+-- ฉากหลังสีดำทึบ บล็อกการคลิกทุกอย่างในเกม
+local bgOverlay = Instance.new("Frame", gui)
+bgOverlay.Size = UDim2.new(1,0,1,0)
+bgOverlay.BackgroundColor3 = Color3.fromRGB(0,0,0)
+bgOverlay.BackgroundTransparency = 0.4 -- ปรับความมืดได้ (0 = มืดสนิท, 1 = ใส)
+bgOverlay.Active = true -- 📌 บล็อกการคลิกทะลุจอ
+
+local frame = Instance.new("Frame", bgOverlay)
 frame.Size = UDim2.new(0,340,0,250)
 frame.Position = UDim2.new(0.5,-170,0.5,-125)
 frame.BackgroundColor3 = Color3.fromRGB(15,15,20)
@@ -56,32 +63,21 @@ local stroke = Instance.new("UIStroke",frame)
 stroke.Thickness = 2
 stroke.Color = Color3.fromRGB(0,170,255)
 
-local top = Instance.new("Frame")
-top.Parent = frame
+local top = Instance.new("Frame",frame)
 top.Size = UDim2.new(1,0,0,38)
 top.BackgroundColor3 = Color3.fromRGB(25,25,35)
 top.BorderSizePixel = 0
 Instance.new("UICorner",top).CornerRadius = UDim.new(0,14)
 
 local title = Instance.new("TextLabel",top)
-title.Size = UDim2.new(1,-110,1,0)
+title.Size = UDim2.new(1,-20,1,0)
 title.Position = UDim2.new(0,12,0,0)
 title.BackgroundTransparency = 1
-title.Text = "⚡ ScriptRoblox99"
+title.Text = "⚡ ScriptRoblox99 (กรุณาใส่คีย์เพื่อปลดล็อกหน้าจอ)"
 title.Font = Enum.Font.GothamBold
-title.TextSize = 16
+title.TextSize = 14
 title.TextColor3 = Color3.new(1,1,1)
 title.TextXAlignment = Enum.TextXAlignment.Left
-
-local minimize = Instance.new("TextButton",top)
-minimize.Size = UDim2.new(0,30,0,28)
-minimize.Position = UDim2.new(1,-35,0,5)
-minimize.Text = "-"
-minimize.Font = Enum.Font.GothamBold
-minimize.TextSize = 20
-minimize.BackgroundColor3 = Color3.fromRGB(45,45,55)
-minimize.TextColor3 = Color3.new(1,1,1)
-Instance.new("UICorner",minimize)
 
 -- BODY
 local body = Instance.new("Frame",frame)
@@ -140,17 +136,14 @@ discordBtn.TextColor3 = Color3.fromRGB(200,200,200)
 discordBtn.BackgroundColor3 = Color3.fromRGB(40,40,50)
 Instance.new("UICorner",discordBtn).CornerRadius = UDim.new(0,8)
 
--- Timer Circle
--- ================= เปลี่ยนจากวงกลม เป็นสี่เหลี่ยมผืนผ้า และลากขยับได้ =================
+-- Timer Circle (สี่เหลี่ยมผืนผ้า ลากขยับได้)
 local Circle = Instance.new("Frame", gui)
 Circle.Name = "TimerBox"
--- ปรับขนาดเป็นสี่เหลี่ยมผืนผ้า (กว้าง 130, สูง 40)
 Circle.Size = UDim2.new(0, 130, 0, 40)
--- กำหนดตำแหน่งเริ่มต้น (ปรับเลื่อนขึ้นขอบจอตามต้องการได้)
 Circle.Position = UDim2.new(1, -140, 0, 15) 
 Circle.BackgroundColor3 = Color3.fromRGB(15, 15, 20)
-Circle.Visible = false -- ซ่อนไว้ก่อนจนกว่าจะใส่คีย์ผ่าน
-Instance.new("UICorner", Circle).CornerRadius = UDim.new(0, 8) -- ทำมุมโค้งมนสวยๆ
+Circle.Visible = false 
+Instance.new("UICorner", Circle).CornerRadius = UDim.new(0, 8)
 
 local CircleStroke = Instance.new("UIStroke", Circle)
 CircleStroke.Color = Color3.fromRGB(0, 255, 170)
@@ -164,7 +157,7 @@ CircleText.TextColor3 = Color3.new(1,1,1)
 CircleText.TextSize = 13
 CircleText.Font = Enum.Font.GothamBold
 
--- 🖱️ เพิ่มระบบทำให้กล่องสี่เหลี่ยมนี้ "ลากเลื่อนไปซ้าย ขวา บน ล่าง ได้อิสระ"
+-- ลากเลื่อนกล่องเวลา
 local timerDragging, timerDragStart, timerStartPos
 Circle.InputBegan:Connect(function(input)
     if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
@@ -177,12 +170,7 @@ end)
 UIS.InputChanged:Connect(function(input)
     if timerDragging and (input.UserInputType == Enum.UserInputType.MouseMovement or input.UserInputType == Enum.UserInputType.Touch) then
         local delta = input.Position - timerDragStart
-        Circle.Position = UDim2.new(
-            timerStartPos.X.Scale, 
-            timerStartPos.X.Offset + delta.X, 
-            timerStartPos.Y.Scale, 
-            timerStartPos.Y.Offset + delta.Y
-        )
+        Circle.Position = UDim2.new(timerStartPos.X.Scale, timerStartPos.X.Offset + delta.X, timerStartPos.Y.Scale, timerStartPos.Y.Offset + delta.Y)
     end
 end)
 
@@ -195,7 +183,7 @@ end)
 -- Functions
 local function startCountdown(sec)
     Circle.Visible = true
-    frame.Visible = false
+    bgOverlay.Visible = false -- ซ่อนฉากหลังทึบเมื่อใส่คีย์ผ่านแล้ว ให้เล่นเกมต่อได้
     task.spawn(function()
         local total = sec
         while total > 0 do
@@ -208,7 +196,12 @@ local function startCountdown(sec)
             if total < 300 then CircleStroke.Color = Color3.fromRGB(255,80,80) CircleText.TextColor3 = Color3.fromRGB(255,80,80) end
             task.wait(1) total -= 1
         end
-        Circle.Visible = false stopMain() frame.Visible = true checkBtn.Text = "คีย์หมดอายุแล้ว ใส่ใหม่ ✨" keyBox.Text = ""
+        -- เมื่อหมดเวลา: ปิดตัวช่วยหลัก และเด้งหน้าจอทึบกลับมาบล็อกเกมทันที
+        Circle.Visible = false 
+        stopMain() 
+        bgOverlay.Visible = true 
+        checkBtn.Text = "คีย์หมดอายุแล้ว ใส่ใหม่ ✨" 
+        keyBox.Text = ""
         pcall(function() if isfile and delfile and isfile(KEY_FILE) then delfile(KEY_FILE) end end)
     end)
 end
@@ -216,7 +209,6 @@ end
 local function loadGame(key)
     if getgenv().XEK_MainRunning then return end
     getgenv().XEK_MainRunning = true
-    -- 📌 ส่ง gameId (UniverseId) ไปให้เซิร์ฟเวอร์แทน placeId เพื่อให้ครอบคลุมทุกดันเจี้ยนในเกมนั้นๆ
     local url = GETSCRIPT_BASE.."?key="..key.."&gameId="..game.GameId.."&hwid="..hwid
     local ok, code = pcall(function() return game:HttpGet(url) end)
     if ok and code and not code:find("Invalid") and not code:find("not found") then
@@ -275,29 +267,6 @@ discordBtn.MouseButton1Click:Connect(function()
     discordBtn.Text = "🔑 ขอรหัสฟรี / ก๊อปปี้ดิสคอร์ด"
 end)
 
--- Drag & Minimize
-local open = true
-minimize.MouseButton1Click:Connect(function()
-    open = not open
-    body.Visible = open
-    if open then frame:TweenSize(UDim2.new(0,340,0,250),"Out","Quad",0.25,true) minimize.Text="-"
-    else frame:TweenSize(UDim2.new(0,340,0,38),"Out","Quad",0.25,true) minimize.Text="+" end
-end)
-local dragging, dragStart, startPos
-top.InputBegan:Connect(function(input)
-    if input.UserInputType==Enum.UserInputType.MouseButton1 or input.UserInputType==Enum.UserInputType.Touch then
-        dragging=true dragStart=input.Position startPos=frame.Position
-    end
-end)
-UIS.InputChanged:Connect(function(input)
-    if dragging and (input.UserInputType==Enum.UserInputType.MouseMovement or input.UserInputType==Enum.UserInputType.Touch) then
-        local delta = input.Position - dragStart
-        frame.Position = UDim2.new(startPos.X.Scale,startPos.X.Offset+delta.X,startPos.Y.Scale,startPos.Y.Offset+delta.Y)
-    end
-end)
-UIS.InputEnded:Connect(function(input)
-    if input.UserInputType==Enum.UserInputType.MouseButton1 or input.UserInputType==Enum.UserInputType.Touch then dragging=false end
-end)
-
+-- เอฟเฟกต์ตอนเปิดหน้าจอ
 frame.Size = UDim2.new(0,0,0,0)
 TweenService:Create(frame,TweenInfo.new(0.35,Enum.EasingStyle.Back),{Size=UDim2.new(0,340,0,250)}):Play()
